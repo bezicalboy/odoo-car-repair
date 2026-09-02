@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_car_repair_workorder_list" model="ir.ui.view">
+        <field name="name">car.repair.workorder.list</field>
+        <field name="model">car.repair.workorder</field>
+        <field name="arch" type="xml">
+            <list string="Car Work Orders" sample="1">
+                <field name="name"/>
+                <field name="subject"/>
+                <field name="partner_id"/>
+                <field name="technician_id" widget="many2one_avatar_user"/>
+                <field name="sale_order_id" optional="show"/>
+                <field name="date_start" optional="hide"/>
+                <field name="hours" widget="float_time" sum="Total Hours"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'in_progress'"
+                       decoration-warning="state in ('paused', 'pending')"
+                       decoration-success="state == 'finished'"
+                       decoration-muted="state == 'cancel'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_car_repair_workorder_form" model="ir.ui.view">
+        <field name="name">car.repair.workorder.form</field>
+        <field name="model">car.repair.workorder</field>
+        <field name="arch" type="xml">
+            <form string="Car Work Order">
+                <header>
+                    <!-- Buttons follow the state machine:
+                         draft -> start; in_progress -> pause/pending/finish;
+                         paused/pending -> resume/finish; cancel from anywhere but finished. -->
+                    <button name="action_start" type="object" string="Start"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_pause" type="object" string="Pause"
+                            invisible="state != 'in_progress'"/>
+                    <button name="action_resume" type="object" string="Resume"
+                            class="btn-primary" invisible="state not in ('paused', 'pending')"/>
+                    <button name="action_pending" type="object" string="Pending"
+                            invisible="state != 'in_progress'"/>
+                    <button name="action_finish" type="object" string="Finish"
+                            class="btn-primary" invisible="state not in ('in_progress', 'paused', 'pending')"/>
+                    <button name="action_create_invoice" type="object" string="Create Invoice"
+                            class="btn-primary" invisible="state != 'finished' or not sale_order_id"
+                            groups="car_repair.group_service_manager"/>
+                    <button name="action_cancel" type="object" string="Cancel Order"
+                            invisible="state in ('finished', 'cancel')"/>
+                    <button name="action_draft" type="object" string="Set to Draft"
+                            invisible="state != 'cancel'"
+                            groups="car_repair.group_head_technician"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,in_progress,paused,pending,finished"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_repair_order" type="object" class="oe_stat_button"
+                                icon="fa-truck" invisible="not repair_order_id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Repair Order</span>
+                            </div>
+                        </button>
+                        <button name="action_view_diagnosis" type="object" class="oe_stat_button"
+                                icon="fa-stethoscope" invisible="not diagnosis_id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Diagnosis</span>
+                            </div>
+                        </button>
+                        <button name="action_view_sale_order" type="object" class="oe_stat_button"
+                                icon="fa-dollar" invisible="not sale_order_id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Sales Order</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="subject"/>
+                            <field name="partner_id"/>
+                            <field name="technician_id" widget="many2one_avatar_user"
+                                   readonly="state not in ('draft', 'pending')"
+                                   groups="car_repair.group_head_technician"/>
+                        </group>
+                        <group>
+                            <field name="date"/>
+                            <field name="priority" widget="priority"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Information" name="information">
+                            <group>
+                                <group string="Planned Date">
+                                    <field name="date_start"/>
+                                    <field name="date_end"/>
+                                </group>
+                                <group string="Duration">
+                                    <field name="hours" widget="float_time" readonly="1"/>
+                                </group>
+                            </group>
+                            <separator string="Work To Do"/>
+                            <field name="line_ids">
+                                <list string="Work Order Lines" editable="bottom">
+                                    <field name="car_line_id"/>
+                                    <field name="product_id"/>
+                                    <field name="description"/>
+                                    <field name="quantity"/>
+                                    <field name="is_done" widget="boolean_toggle"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Time Logs" name="time_logs">
+                            <field name="time_ids" readonly="1">
+                                <list string="Time Logs">
+                                    <field name="user_id" widget="many2one_avatar_user"/>
+                                    <field name="date_start"/>
+                                    <field name="date_end"/>
+                                    <field name="duration" widget="float_time" sum="Total"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Work Note" name="note">
+                            <field name="note" placeholder="What has been done on the car..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_car_repair_workorder_search" model="ir.ui.view">
+        <field name="name">car.repair.workorder.search</field>
+        <field name="model">car.repair.workorder</field>
+        <field name="arch" type="xml">
+            <search string="Car Work Orders">
+                <field name="name"/>
+                <field name="subject"/>
+                <field name="partner_id"/>
+                <field name="technician_id"/>
+                <field name="sale_order_id"/>
+                <filter name="filter_mine" string="My Work Orders"
+                        domain="[('technician_id', '=', uid)]"/>
+                <separator/>
+                <filter name="filter_todo" string="To Do"
+                        domain="[('state', 'in', ('draft', 'in_progress', 'paused', 'pending'))]"/>
+                <filter name="filter_finished" string="Finished"
+                        domain="[('state', '=', 'finished')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="group_technician" string="Technician"
+                            context="{'group_by': 'technician_id'}"/>
+                    <filter name="group_partner" string="Client"
+                            context="{'group_by': 'partner_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_car_repair_workorder" model="ir.actions.act_window">
+        <field name="name">Work Orders</field>
+        <field name="res_model">car.repair.workorder</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No work order yet</p>
+            <p>A work order is created automatically when a car repair quotation is confirmed.</p>
+        </field>
+    </record>
+
+</odoo>
