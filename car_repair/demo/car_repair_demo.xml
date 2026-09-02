@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Demo data: one full flow ready to click through after installation.
+         Own vehicle models so the demo does not depend on the fleet demo data. -->
+    <record id="demo_model_a1" model="fleet.vehicle.model">
+        <field name="name">A1</field>
+        <field name="brand_id" ref="fleet.brand_audi"/>
+    </record>
+
+    <record id="demo_model_corsa" model="fleet.vehicle.model">
+        <field name="name">Corsa</field>
+        <field name="brand_id" ref="fleet.brand_opel"/>
+    </record>
+
+    <record id="demo_vehicle_1" model="fleet.vehicle">
+        <field name="model_id" ref="demo_model_a1"/>
+        <field name="license_plate">1-AUD-001</field>
+        <field name="vin_sn">455257985</field>
+        <field name="fuel_type">diesel</field>
+    </record>
+
+    <record id="demo_vehicle_2" model="fleet.vehicle">
+        <field name="model_id" ref="demo_model_corsa"/>
+        <field name="license_plate">1-ABC-8989</field>
+        <field name="vin_sn">778812345</field>
+        <field name="fuel_type">gasoline</field>
+    </record>
+
+    <record id="demo_repair_order_1" model="car.repair.order">
+        <field name="subject">Battery replacement</field>
+        <field name="partner_id" ref="base.res_partner_2"/>
+        <field name="contact_name">Deco Addict</field>
+        <field name="contact_number">8222220010</field>
+        <field name="user_id" ref="base.user_admin"/>
+    </record>
+
+    <record id="demo_repair_order_1_car_1" model="car.repair.order.line">
+        <field name="repair_order_id" ref="demo_repair_order_1"/>
+        <field name="vehicle_id" ref="demo_vehicle_1"/>
+        <field name="under_guarantee" eval="True"/>
+        <field name="guarantee_type">paid</field>
+        <field name="nature_of_service">Battery does not hold the charge</field>
+        <field name="service_details">Customer reports the car does not start in the morning.</field>
+    </record>
+
+    <record id="demo_repair_order_1_checklist_1" model="car.repair.order.checklist">
+        <field name="repair_order_id" ref="demo_repair_order_1"/>
+        <field name="checklist_id" ref="checklist_battery"/>
+    </record>
+
+    <record id="demo_repair_order_1_checklist_2" model="car.repair.order.checklist">
+        <field name="repair_order_id" ref="demo_repair_order_1"/>
+        <field name="checklist_id" ref="checklist_engine_oil"/>
+    </record>
+
+    <record id="demo_repair_order_2" model="car.repair.order">
+        <field name="subject">Wheel alignment and tyres</field>
+        <field name="partner_id" ref="base.res_partner_12"/>
+        <field name="user_id" ref="base.user_admin"/>
+    </record>
+
+    <record id="demo_repair_order_2_car_1" model="car.repair.order.line">
+        <field name="repair_order_id" ref="demo_repair_order_2"/>
+        <field name="vehicle_id" ref="demo_vehicle_2"/>
+        <field name="nature_of_service">Car pulls to the right</field>
+    </record>
+
+    <record id="demo_repair_order_2_checklist_1" model="car.repair.order.checklist">
+        <field name="repair_order_id" ref="demo_repair_order_2"/>
+        <field name="checklist_id" ref="checklist_wheel_alignment"/>
+    </record>
+
+</odoo>
