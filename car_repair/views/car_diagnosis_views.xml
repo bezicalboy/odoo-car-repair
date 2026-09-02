@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_car_diagnosis_list" model="ir.ui.view">
+        <field name="name">car.diagnosis.list</field>
+        <field name="model">car.diagnosis</field>
+        <field name="arch" type="xml">
+            <list string="Car Diagnosis" sample="1">
+                <field name="name"/>
+                <field name="subject"/>
+                <field name="repair_order_id"/>
+                <field name="partner_id"/>
+                <field name="technician_id" widget="many2one_avatar_user"/>
+                <field name="date_receipt" optional="show"/>
+                <field name="result_count" string="Results" optional="hide"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'in_progress'"
+                       decoration-success="state == 'complete'"
+                       decoration-muted="state == 'cancel'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_car_diagnosis_form" model="ir.ui.view">
+        <field name="name">car.diagnosis.form</field>
+        <field name="model">car.diagnosis</field>
+        <field name="arch" type="xml">
+            <form string="Car Diagnosis">
+                <header>
+                    <button name="action_assign_technician" type="object" string="Assign To Technician"
+                            class="btn-primary" invisible="state in ('complete', 'cancel')"
+                            groups="car_repair.group_head_technician"/>
+                    <button name="action_enter_results" type="object" string="Enter Results"
+                            class="btn-primary" invisible="not technician_id or state in ('complete', 'cancel')"
+                            groups="car_repair.group_head_technician"/>
+                    <button name="action_complete" type="object" string="Mark Complete"
+                            invisible="state != 'in_progress'"
+                            groups="car_repair.group_head_technician"/>
+                    <button name="action_create_quotation" type="object" string="Create Quotation"
+                            class="btn-primary" invisible="state not in ('in_progress', 'complete')"
+                            groups="car_repair.group_service_manager"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state in ('complete', 'cancel')"
+                            groups="car_repair.group_service_manager"/>
+                    <button name="action_draft" type="object" string="Set to Draft"
+                            invisible="state != 'cancel'"
+                            groups="car_repair.group_service_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,in_progress,complete"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_repair_order" type="object" class="oe_stat_button"
+                                icon="fa-truck">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Repair Order</span>
+                            </div>
+                        </button>
+                        <button name="action_view_sale_order" type="object" class="oe_stat_button"
+                                icon="fa-dollar" invisible="sale_order_count == 0">
+                            <field name="sale_order_count" widget="statinfo" string="Quotations"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="subject"/>
+                            <field name="repair_order_id" readonly="1"/>
+                            <field name="technician_id" widget="many2one_avatar_user"
+                                   readonly="1" force_save="1"/>
+                        </group>
+                        <group>
+                            <field name="priority" widget="priority"/>
+                            <field name="date_receipt"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="General" name="general">
+                            <group>
+                                <group string="Client Info">
+                                    <field name="partner_id"/>
+                                    <field name="contact_name"/>
+                                    <field name="phone"/>
+                                    <field name="mobile"/>
+                                    <field name="email" widget="email"/>
+                                    <field name="contact_number"/>
+                                </group>
+                            </group>
+                            <separator string="Car Info"/>
+                            <field name="car_line_ids" widget="many2many">
+                                <list string="Car Details">
+                                    <field name="vehicle_id"/>
+                                    <field name="license_plate"/>
+                                    <field name="model_id"/>
+                                    <field name="vin_sn"/>
+                                    <field name="fuel_type"/>
+                                    <field name="under_guarantee" widget="boolean_toggle"/>
+                                    <field name="nature_of_service"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Diagnostic Result" name="result">
+                            <field name="result_ids">
+                                <list string="Diagnostic Result" editable="bottom">
+                                    <field name="car_line_id"/>
+                                    <field name="vin_sn"/>
+                                    <field name="product_id"/>
+                                    <field name="code"/>
+                                    <field name="quantity"/>
+                                    <field name="price_unit"/>
+                                    <field name="recommendation"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Diagnosis Note" name="note">
+                            <field name="note" placeholder="Findings, recommendations..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Popup used by the assigned technician to fill his findings only. -->
+    <record id="view_car_diagnosis_result_form" model="ir.ui.view">
+        <field name="name">car.diagnosis.result.form</field>
+        <field name="model">car.diagnosis</field>
+        <field name="priority">32</field>
+        <field name="arch" type="xml">
+            <form string="Car Diagnostic Result">
+                <group>
+                    <group>
+                        <field name="name" readonly="1"/>
+                        <field name="subject" readonly="1"/>
+                    </group>
+                    <group>
+                        <field name="technician_id" readonly="1"/>
+                        <field name="state" readonly="1"/>
+                    </group>
+                </group>
+                <field name="result_ids">
+                    <list string="Diagnostic Result" editable="bottom">
+                        <field name="car_line_id"/>
+                        <field name="product_id"/>
+                        <field name="code"/>
+                        <field name="quantity"/>
+                        <field name="price_unit"/>
+                        <field name="recommendation"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_complete" type="object" string="Mark Complete"
+                            class="btn-primary" invisible="state == 'complete'"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_car_diagnosis_search" model="ir.ui.view">
+        <field name="name">car.diagnosis.search</field>
+        <field name="model">car.diagnosis</field>
+        <field name="arch" type="xml">
+            <search string="Car Diagnosis">
+                <field name="name"/>
+                <field name="subject"/>
+                <field name="partner_id"/>
+                <field name="technician_id"/>
+                <field name="repair_order_id"/>
+                <filter name="filter_mine" string="Assigned to me"
+                        domain="[('technician_id', '=', uid)]"/>
+                <filter name="filter_unassigned" string="Unassigned"
+                        domain="[('technician_id', '=', False)]"/>
+                <separator/>
+                <filter name="filter_open" string="Open"
+                        domain="[('state', 'not in', ('complete', 'cancel'))]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="group_technician" string="Technician"
+                            context="{'group_by': 'technician_id'}"/>
+                    <filter name="group_partner" string="Client"
+                            context="{'group_by': 'partner_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_car_diagnosis" model="ir.actions.act_window">
+        <field name="name">Car Diagnosis</field>
+        <field name="res_model">car.diagnosis</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_filter_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No diagnosis yet</p>
+            <p>A diagnosis is created from a car repair order.</p>
+        </field>
+    </record>
+
+</odoo>

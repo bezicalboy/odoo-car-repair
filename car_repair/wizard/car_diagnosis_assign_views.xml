@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_car_diagnosis_assign_form" model="ir.ui.view">
+        <field name="name">car.diagnosis.assign.form</field>
+        <field name="model">car.diagnosis.assign</field>
+        <field name="arch" type="xml">
+            <form string="Assign To Technician">
+                <group>
+                    <field name="diagnosis_id" invisible="1"/>
+                    <field name="technician_id"
+                           domain="[('share', '=', False), ('groups_id', 'in', %(car_repair.group_technician)d)]"
+                           options="{'no_create': True}"/>
+                </group>
+                <footer>
+                    <button name="action_assign" type="object" string="Assign" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>
