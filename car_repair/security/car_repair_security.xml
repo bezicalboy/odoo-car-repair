@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <!-- FR-1: a Technician only sees and works on his own work orders.
+             Group rules are unified (OR), so the manager rule below is
+             mandatory: without it the restriction would also apply to them. -->
+        <record id="car_repair_workorder_rule_technician" model="ir.rule">
+            <field name="name">Car Work Order: own work orders only (Technician)</field>
+            <field name="model_id" ref="model_car_repair_workorder"/>
+            <field name="domain_force">[('technician_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('car_repair.group_technician'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+        <record id="car_repair_workorder_rule_all" model="ir.rule">
+            <field name="name">Car Work Order: all work orders (Head Technician and above)</field>
+            <field name="model_id" ref="model_car_repair_workorder"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('car_repair.group_head_technician'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+        <!-- Same split on the work order children, otherwise a technician
+             could read the time logs and lines of his colleagues. -->
+        <record id="car_repair_workorder_line_rule_technician" model="ir.rule">
+            <field name="name">Car Work Order Line: own work orders only (Technician)</field>
+            <field name="model_id" ref="model_car_repair_workorder_line"/>
+            <field name="domain_force">[('workorder_id.technician_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('car_repair.group_technician'))]"/>
+        </record>
+
+        <record id="car_repair_workorder_line_rule_all" model="ir.rule">
+            <field name="name">Car Work Order Line: all (Head Technician and above)</field>
+            <field name="model_id" ref="model_car_repair_workorder_line"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('car_repair.group_head_technician'))]"/>
+        </record>
+
+        <record id="car_repair_workorder_time_rule_technician" model="ir.rule">
+            <field name="name">Car Work Order Time: own work orders only (Technician)</field>
+            <field name="model_id" ref="model_car_repair_workorder_time"/>
+            <field name="domain_force">[('workorder_id.technician_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('car_repair.group_technician'))]"/>
+        </record>
+
+        <record id="car_repair_workorder_time_rule_all" model="ir.rule">
+            <field name="name">Car Work Order Time: all (Head Technician and above)</field>
+            <field name="model_id" ref="model_car_repair_workorder_time"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('car_repair.group_head_technician'))]"/>
+        </record>
+
+        <!-- Multi-company isolation on the two main documents. -->
+        <record id="car_repair_order_rule_company" model="ir.rule">
+            <field name="name">Car Repair Order: multi-company</field>
+            <field name="model_id" ref="model_car_repair_order"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+            <field name="global" eval="True"/>
+        </record>
+
+        <record id="car_repair_workorder_rule_company" model="ir.rule">
+            <field name="name">Car Work Order: multi-company</field>
+            <field name="model_id" ref="model_car_repair_workorder"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+            <field name="global" eval="True"/>
+        </record>
+
+    </data>
+</odoo>
