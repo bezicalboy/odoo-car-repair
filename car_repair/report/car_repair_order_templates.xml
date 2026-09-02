@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Shared blocks so the four workshop reports stay consistent. -->
+    <template id="car_repair_address_block">
+        <div class="row mb-3">
+            <div class="col-5">
+                <strong>Client Address</strong>
+                <div t-field="doc.partner_id"
+                     t-options="{'widget': 'contact', 'fields': ['address', 'name', 'phone', 'email'], 'no_marker': True}"/>
+            </div>
+            <div class="col-4">
+                <strong>Contact Name</strong>
+                <div><span t-field="doc.contact_name">Contact</span></div>
+                <strong>Tel:</strong>
+                <span t-field="doc.contact_number">Tel</span>
+            </div>
+            <div class="col-3">
+                <strong>Date of Receipt</strong>
+                <div><span t-field="doc.date_receipt">01/01/2026</span></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="car_repair_car_table">
+        <table class="table table-sm table-bordered">
+            <thead>
+                <tr>
+                    <th>Car</th>
+                    <th>Model Number</th>
+                    <th>Serial Number</th>
+                    <th>Guarantee</th>
+                    <th>Service Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr t-foreach="car_lines" t-as="line">
+                    <td><span t-field="line.vehicle_id">Audi/A1</span></td>
+                    <td><span t-field="line.model_id">A1</span></td>
+                    <td><span t-field="line.vin_sn">123456</span></td>
+                    <td><span t-field="line.under_guarantee">Yes</span></td>
+                    <td><span t-field="line.nature_of_service">Service</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </template>
+
+    <!-- Car Label Report -->
+    <template id="report_car_label_document">
+        <t t-call="web.basic_layout">
+            <div class="page">
+                <table class="table table-sm table-bordered">
+                    <tr>
+                        <td><strong t-field="doc.name">SR00001</strong></td>
+                        <td class="text-end"><span t-field="doc.date_receipt">01/01/2026</span></td>
+                    </tr>
+                    <tr>
+                        <td>Client</td>
+                        <td><span t-field="doc.partner_id">Azure Interior</span></td>
+                    </tr>
+                    <tr t-foreach="doc.car_line_ids" t-as="line">
+                        <td>Car</td>
+                        <td>
+                            <span t-field="line.vehicle_id">Audi/A1</span>
+                            <div>N° Serial: <span t-field="line.vin_sn">123456</span></div>
+                            <div t-if="line.nature_of_service">
+                                Service: <span t-field="line.nature_of_service">Service</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Description</td>
+                        <td><span t-field="doc.subject">Battery replacement</span></td>
+                    </tr>
+                </table>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_car_label">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="car_repair.report_car_label_document"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- Car Receipt Report -->
+    <template id="report_car_receipt_document">
+        <t t-call="web.external_layout">
+            <div class="page">
+                <t t-call="car_repair.car_repair_address_block"/>
+                <h2>Receipt <span t-field="doc.name">SR00001</span></h2>
+                <t t-call="car_repair.car_repair_car_table">
+                    <t t-set="car_lines" t-value="doc.car_line_ids"/>
+                </t>
+                <h4>Service Details:</h4>
+                <table class="table table-sm table-bordered">
+                    <tr t-foreach="doc.car_line_ids" t-as="line">
+                        <td><strong t-field="line.vehicle_id">Audi/A1</strong></td>
+                        <td><span t-field="line.service_details">Details</span></td>
+                    </tr>
+                </table>
+                <div class="row mt-5">
+                    <div class="col-6">
+                        <div style="border-top: 1px solid black;">Signature of Reception</div>
+                    </div>
+                    <div class="col-6">
+                        <div style="border-top: 1px solid black;">Signature of Client</div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_car_receipt">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="car_repair.report_car_receipt_document"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- Car Checklist Report -->
+    <template id="report_car_checklist_document">
+        <t t-call="web.external_layout">
+            <div class="page">
+                <t t-call="car_repair.car_repair_address_block"/>
+                <h2>Receipt <span t-field="doc.name">SR00001</span></h2>
+                <t t-call="car_repair.car_repair_car_table">
+                    <t t-set="car_lines" t-value="doc.car_line_ids"/>
+                </t>
+                <h4>Repaired Checklist:</h4>
+                <table class="table table-sm table-bordered">
+                    <tr t-foreach="doc.checklist_line_ids" t-as="line">
+                        <td style="width: 40px;">
+                            <span t-if="line.is_done">[X]</span>
+                            <span t-else="">[ ]</span>
+                        </td>
+                        <td><strong t-field="line.checklist_id">Oil replacement</strong></td>
+                        <td><span t-field="line.note">Note</span></td>
+                    </tr>
+                </table>
+                <div class="row mt-5">
+                    <div class="col-6">
+                        <div style="border-top: 1px solid black;">Signature of Reception</div>
+                    </div>
+                    <div class="col-6">
+                        <div style="border-top: 1px solid black;">Signature of Client</div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_car_checklist">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="car_repair.report_car_checklist_document"/>
+            </t>
+        </t>
+    </template>
+
+</odoo>

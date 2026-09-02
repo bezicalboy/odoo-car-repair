@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- FR-7: printable documents of each step of the flow. -->
+
+    <record id="action_report_car_label" model="ir.actions.report">
+        <field name="name">Car Label</field>
+        <field name="model">car.repair.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">car_repair.report_car_label</field>
+        <field name="report_file">car_repair.report_car_label</field>
+        <field name="print_report_name">'Label - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_car_repair_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_car_receipt" model="ir.actions.report">
+        <field name="name">Car Receipt</field>
+        <field name="model">car.repair.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">car_repair.report_car_receipt</field>
+        <field name="report_file">car_repair.report_car_receipt</field>
+        <field name="print_report_name">'Receipt - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_car_repair_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_car_checklist" model="ir.actions.report">
+        <field name="name">Car Checklist</field>
+        <field name="model">car.repair.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">car_repair.report_car_checklist</field>
+        <field name="report_file">car_repair.report_car_checklist</field>
+        <field name="print_report_name">'Checklist - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_car_repair_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_car_diagnosis_request" model="ir.actions.report">
+        <field name="name">Car Diagnostic Request</field>
+        <field name="model">car.diagnosis</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">car_repair.report_car_diagnosis_request</field>
+        <field name="report_file">car_repair.report_car_diagnosis_request</field>
+        <field name="print_report_name">'Diagnostic Request - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_car_diagnosis"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_car_diagnosis_result" model="ir.actions.report">
+        <field name="name">Car Diagnostic Result</field>
+        <field name="model">car.diagnosis</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">car_repair.report_car_diagnosis_result</field>
+        <field name="report_file">car_repair.report_car_diagnosis_result</field>
+        <field name="print_report_name">'Diagnostic Result - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_car_diagnosis"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_car_workorder" model="ir.actions.report">
+        <field name="name">Car Work Order</field>
+        <field name="model">car.repair.workorder</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">car_repair.report_car_workorder</field>
+        <field name="report_file">car_repair.report_car_workorder</field>
+        <field name="print_report_name">'Work Order - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_car_repair_workorder"/>
+        <field name="binding_type">report</field>
+    </record>
+
+</odoo>

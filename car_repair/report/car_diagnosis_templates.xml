@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="car_diagnosis_address_block">
+        <div class="row mb-3">
+            <div class="col-5">
+                <strong>Client Address</strong>
+                <div t-field="doc.partner_id"
+                     t-options="{'widget': 'contact', 'fields': ['address', 'name', 'phone', 'email'], 'no_marker': True}"/>
+            </div>
+            <div class="col-4">
+                <strong>Contact Name</strong>
+                <div><span t-field="doc.contact_name">Contact</span></div>
+                <strong>Tel:</strong>
+                <span t-field="doc.contact_number">Tel</span>
+            </div>
+            <div class="col-3">
+                <strong>Date of Receipt</strong>
+                <div><span t-field="doc.date_receipt">01/01/2026</span></div>
+                <strong>Technician</strong>
+                <div><span t-field="doc.technician_id">Technician</span></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="car_diagnosis_car_table">
+        <table class="table table-sm table-bordered">
+            <thead>
+                <tr>
+                    <th>Car</th>
+                    <th>Model Number</th>
+                    <th>Serial Number</th>
+                    <th>Guarantee</th>
+                    <th>Service Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr t-foreach="doc.car_line_ids" t-as="line">
+                    <td><span t-field="line.vehicle_id">Audi/A1</span></td>
+                    <td><span t-field="line.model_id">A1</span></td>
+                    <td><span t-field="line.vin_sn">123456</span></td>
+                    <td><span t-field="line.under_guarantee">Yes</span></td>
+                    <td><span t-field="line.nature_of_service">Service</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </template>
+
+    <!-- Car Diagnosis Request Report: what the workshop asks the technician to check -->
+    <template id="report_car_diagnosis_request_document">
+        <t t-call="web.external_layout">
+            <div class="page">
+                <t t-call="car_repair.car_diagnosis_address_block"/>
+                <h2>Diagnostic Request <span t-field="doc.name">DIAG00001</span></h2>
+                <p><strong>Subject: </strong><span t-field="doc.subject">Battery replacement</span></p>
+                <t t-call="car_repair.car_diagnosis_car_table"/>
+                <h4>Service Details:</h4>
+                <table class="table table-sm table-bordered">
+                    <tr t-foreach="doc.car_line_ids" t-as="line">
+                        <td><strong t-field="line.vehicle_id">Audi/A1</strong></td>
+                        <td><span t-field="line.service_details">Details</span></td>
+                    </tr>
+                </table>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_car_diagnosis_request">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="car_repair.report_car_diagnosis_request_document"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- Car Diagnosis Result Report: what the technician found -->
+    <template id="report_car_diagnosis_result_document">
+        <t t-call="web.external_layout">
+            <div class="page">
+                <t t-call="car_repair.car_diagnosis_address_block"/>
+                <h2>Diagnostic Result <span t-field="doc.name">DIAG00001</span></h2>
+                <t t-call="car_repair.car_diagnosis_car_table"/>
+                <h4>Diagnostic Result:</h4>
+                <table class="table table-sm table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Car</th>
+                            <th>Serial Number</th>
+                            <th>Spare Part</th>
+                            <th>Code</th>
+                            <th class="text-end">Quantity</th>
+                            <th>Recommendation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="doc.result_ids" t-as="result">
+                            <td><span t-field="result.vehicle_id">Audi/A1</span></td>
+                            <td><span t-field="result.vin_sn">123456</span></td>
+                            <td><span t-field="result.product_id">Tyres</span></td>
+                            <td><span t-field="result.code">CODE</span></td>
+                            <td class="text-end"><span t-field="result.quantity">4.0</span></td>
+                            <td><span t-field="result.recommendation">Replace</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div t-if="doc.note">
+                    <h4>Notes</h4>
+                    <div t-field="doc.note">Notes</div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_car_diagnosis_result">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="car_repair.report_car_diagnosis_result_document"/>
+            </t>
+        </t>
+    </template>
+
+</odoo>

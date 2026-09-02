@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Car Work Orders Report: the work performed on the cars -->
+    <template id="report_car_workorder_document">
+        <t t-call="web.external_layout">
+            <div class="page">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <strong>Client Address</strong>
+                        <div t-field="doc.partner_id"
+                             t-options="{'widget': 'contact', 'fields': ['address', 'name', 'phone', 'email'], 'no_marker': True}"/>
+                    </div>
+                    <div class="col-3">
+                        <strong>Technician</strong>
+                        <div><span t-field="doc.technician_id">Technician</span></div>
+                        <strong>Sales Order</strong>
+                        <div><span t-field="doc.sale_order_id">S00001</span></div>
+                    </div>
+                    <div class="col-3">
+                        <strong>Scheduled Date</strong>
+                        <div><span t-field="doc.date_start">01/01/2026</span></div>
+                        <strong>End Date</strong>
+                        <div><span t-field="doc.date_end">01/01/2026</span></div>
+                    </div>
+                </div>
+
+                <h2>Work Order <span t-field="doc.name">WO00001</span></h2>
+                <p>
+                    <strong>Subject: </strong><span t-field="doc.subject">Battery replacement</span>
+                    <br/>
+                    <strong>Status: </strong><span t-field="doc.state">Finished</span>
+                </p>
+
+                <h4>Work Performed:</h4>
+                <table class="table table-sm table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Car</th>
+                            <th>Spare Part / Service</th>
+                            <th>Description</th>
+                            <th class="text-end">Quantity</th>
+                            <th>Done</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="doc.line_ids" t-as="line">
+                            <td><span t-field="line.vehicle_id">Audi/A1</span></td>
+                            <td><span t-field="line.product_id">Tyres</span></td>
+                            <td><span t-field="line.description">Description</span></td>
+                            <td class="text-end"><span t-field="line.quantity">4.0</span></td>
+                            <td>
+                                <span t-if="line.is_done">[X]</span>
+                                <span t-else="">[ ]</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4>Time Spent:</h4>
+                <table class="table table-sm table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Technician</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th class="text-end">Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="doc.time_ids" t-as="log">
+                            <td><span t-field="log.user_id">Technician</span></td>
+                            <td><span t-field="log.date_start">01/01/2026</span></td>
+                            <td><span t-field="log.date_end">01/01/2026</span></td>
+                            <td class="text-end">
+                                <span t-field="log.duration" t-options="{'widget': 'float_time'}">01:00</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end"><strong>Total Hours</strong></td>
+                            <td class="text-end">
+                                <strong t-field="doc.hours" t-options="{'widget': 'float_time'}">02:00</strong>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <div t-if="doc.note">
+                    <h4>Work Note</h4>
+                    <div t-field="doc.note">Notes</div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_car_workorder">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="car_repair.report_car_workorder_document"/>
+            </t>
+        </t>
+    </template>
+
+</odoo>
