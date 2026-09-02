@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="module_category_car_repair" model="ir.module.category">
+        <field name="name">Car Repair</field>
+        <field name="description">Roles of the car repair workshop application.</field>
+        <field name="sequence">20</field>
+    </record>
+
+    <!-- Roles are cumulative: each one implies the previous, so access rights
+         and record rules only have to declare the extra permissions. -->
+    <record id="group_technician" model="res.groups">
+        <field name="name">Technician</field>
+        <field name="category_id" ref="module_category_car_repair"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">Works on the work orders assigned to him. Read only on repair orders and diagnosis.</field>
+    </record>
+
+    <record id="group_head_technician" model="res.groups">
+        <field name="name">Head Technician</field>
+        <field name="category_id" ref="module_category_car_repair"/>
+        <field name="implied_ids" eval="[(4, ref('group_technician'))]"/>
+        <field name="comment">Sees every work order, assigns technicians and fills the diagnostic results. Read only on repair orders.</field>
+    </record>
+
+    <record id="group_service_manager" model="res.groups">
+        <field name="name">Service Manager</field>
+        <field name="category_id" ref="module_category_car_repair"/>
+        <field name="implied_ids" eval="[(4, ref('group_head_technician')), (4, ref('sales_team.group_sale_salesman'))]"/>
+        <field name="comment">Creates repair orders, turns them into diagnosis and creates the quotations.</field>
+    </record>
+
+    <record id="group_director_commercial" model="res.groups">
+        <field name="name">Director Commercial</field>
+        <field name="category_id" ref="module_category_car_repair"/>
+        <field name="implied_ids" eval="[(4, ref('group_service_manager')), (4, ref('fleet.fleet_group_manager'))]"/>
+        <field name="comment">Administrator of the application: full access on every record and on the configuration.</field>
+    </record>
+
+    <!-- The admin user gets the top role so a fresh database is usable. -->
+    <record id="base.user_admin" model="res.users">
+        <field name="groups_id" eval="[(4, ref('group_director_commercial'))]"/>
+    </record>
+
+</odoo>
