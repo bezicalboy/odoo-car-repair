@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem id="menu_car_repair_root" name="Car Repair"
+              web_icon="car_repair,static/description/icon.png"
+              sequence="50" groups="car_repair.group_technician"/>
+
+    <menuitem id="menu_car_repair_operations" name="Car Repair"
+              parent="menu_car_repair_root" sequence="10"/>
+
+    <menuitem id="menu_car_repair_order" name="Car Repair"
+              parent="menu_car_repair_operations"
+              action="action_car_repair_order" sequence="10"/>
+
+    <menuitem id="menu_car_diagnosis" name="Car Diagnosis"
+              parent="menu_car_repair_operations"
+              action="action_car_diagnosis" sequence="20"/>
+
+    <menuitem id="menu_car_repair_workorder" name="Work Orders"
+              parent="menu_car_repair_operations"
+              action="action_car_repair_workorder" sequence="30"/>
+
+    <menuitem id="menu_car_repair_billing" name="Billing"
+              parent="menu_car_repair_root" sequence="20"
+              groups="car_repair.group_service_manager"/>
+
+    <menuitem id="menu_car_repair_quotation" name="Quotations"
+              parent="menu_car_repair_billing"
+              action="sale.action_quotations_with_onboarding" sequence="10"/>
+
+    <menuitem id="menu_car_repair_invoice" name="Invoices"
+              parent="menu_car_repair_billing"
+              action="account.action_move_out_invoice_type" sequence="20"
+              groups="account.group_account_invoice"/>
+
+    <menuitem id="menu_car_repair_configuration" name="Configuration"
+              parent="menu_car_repair_root" sequence="90"
+              groups="car_repair.group_service_manager"/>
+
+    <menuitem id="menu_car_repair_checklist" name="Checklists"
+              parent="menu_car_repair_configuration"
+              action="action_car_repair_checklist" sequence="10"/>
+
+    <menuitem id="menu_car_repair_vehicle" name="Cars"
+              parent="menu_car_repair_configuration"
+              action="fleet.fleet_vehicle_action" sequence="20"/>
+</odoo>
