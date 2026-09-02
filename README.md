@@ -54,7 +54,7 @@ Cumulative roles: every role includes the rights of the one above it.
 | Checklist             | read              | read            | read/write/create | full              |
 | Car Repair Order      | read              | read            | read/write/create | full              |
 | Car Diagnosis         | read              | read/write      | read/write/create | full              |
-| Diagnostic Result     | read              | full            | full            | full                |
+| Diagnostic Result     | **own** r/w/create| full            | full            | full                |
 | Work Order            | read/write **own**| full            | full            | full                |
 
 Access is enforced by `security/ir.model.access.csv` (what a role may do) and
@@ -67,6 +67,14 @@ Record rules of different groups are combined with OR. The rule that grants the
 Head Technician access to every work order is therefore required: without it,
 the "own work orders only" domain of the Technician group would also apply to
 the roles above, since the roles are cumulative.
+
+FR-4 asks for a Technician who is read only on the Diagnosis but who still fills
+his own Diagnostic Result. Those are two models, so the rights differ: read only
+on `car.diagnosis`, read/write/create on `car.diagnosis.result` limited by a
+record rule to the diagnoses assigned to him. That is why `Enter Results` opens
+the result list on its own model (menu Car Repair, Diagnostic Results) instead of
+writing through the one2many of the diagnosis form, which the read-only right on
+the parent would refuse.
 
 ## Cars
 
@@ -85,9 +93,10 @@ The native invoice report shows the car and license plate of each line.
 
     odoo-bin -c odoo.conf -d <database> -u car_repair --test-enable --test-tags=/car_repair --stop-after-init
 
-14 tests: the full flow (`tests/test_car_repair_flow.py`) and the role
+16 tests: the full flow (`tests/test_car_repair_flow.py`) and the role
 enforcement (`tests/test_car_repair_security.py`), including the pause/resume
-accumulation of hours and the invoice quantity following those hours.
+accumulation of hours, the invoice quantity following those hours, and the
+technician who can fill his own diagnostic result but not a colleague's.
 
 Two extra checks render every report and load every view and menu, which the
 unit tests do not cover:

@@ -32,7 +32,7 @@
                             groups="car_repair.group_head_technician"/>
                     <button name="action_enter_results" type="object" string="Enter Results"
                             class="btn-primary" invisible="not technician_id or state in ('complete', 'cancel')"
-                            groups="car_repair.group_head_technician"/>
+                            groups="car_repair.group_technician"/>
                     <button name="action_complete" type="object" string="Mark Complete"
                             invisible="state != 'in_progress'"
                             groups="car_repair.group_head_technician"/>
@@ -124,39 +124,82 @@
         </field>
     </record>
 
-    <!-- Popup used by the assigned technician to fill his findings only. -->
+    <!-- FR-4: the assigned technician edits his findings on the result model
+         itself, because he is read only on the diagnosis header. -->
+    <record id="view_car_diagnosis_result_list" model="ir.ui.view">
+        <field name="name">car.diagnosis.result.list</field>
+        <field name="model">car.diagnosis.result</field>
+        <field name="arch" type="xml">
+            <list string="Car Diagnostic Result" editable="bottom" sample="1">
+                <field name="diagnosis_id" readonly="1" optional="show"/>
+                <field name="car_line_id"/>
+                <field name="vin_sn" optional="hide"/>
+                <field name="product_id"/>
+                <field name="code"/>
+                <field name="quantity"/>
+                <field name="price_unit"/>
+                <field name="recommendation"/>
+                <field name="repair_order_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
     <record id="view_car_diagnosis_result_form" model="ir.ui.view">
         <field name="name">car.diagnosis.result.form</field>
-        <field name="model">car.diagnosis</field>
-        <field name="priority">32</field>
+        <field name="model">car.diagnosis.result</field>
         <field name="arch" type="xml">
             <form string="Car Diagnostic Result">
-                <group>
+                <sheet>
                     <group>
-                        <field name="name" readonly="1"/>
-                        <field name="subject" readonly="1"/>
+                        <group>
+                            <field name="diagnosis_id" readonly="1"/>
+                            <field name="car_line_id"/>
+                            <field name="vin_sn"/>
+                            <field name="repair_order_id" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="code"/>
+                            <field name="quantity"/>
+                            <field name="price_unit"/>
+                        </group>
                     </group>
-                    <group>
-                        <field name="technician_id" readonly="1"/>
-                        <field name="state" readonly="1"/>
+                    <group string="Repair Recommendation">
+                        <field name="recommendation" nolabel="1"
+                               placeholder="What has to be repaired on this car..."/>
                     </group>
-                </group>
-                <field name="result_ids">
-                    <list string="Diagnostic Result" editable="bottom">
-                        <field name="car_line_id"/>
-                        <field name="product_id"/>
-                        <field name="code"/>
-                        <field name="quantity"/>
-                        <field name="price_unit"/>
-                        <field name="recommendation"/>
-                    </list>
-                </field>
-                <footer>
-                    <button name="action_complete" type="object" string="Mark Complete"
-                            class="btn-primary" invisible="state == 'complete'"/>
-                    <button string="Close" class="btn-secondary" special="cancel"/>
-                </footer>
+                </sheet>
             </form>
+        </field>
+    </record>
+
+    <record id="action_car_diagnosis_result" model="ir.actions.act_window">
+        <field name="name">Car Diagnostic Result</field>
+        <field name="res_model">car.diagnosis.result</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_filter_mine': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No diagnostic result yet</p>
+            <p>Record here the parts and labour each car needs.</p>
+        </field>
+    </record>
+
+    <record id="view_car_diagnosis_result_search" model="ir.ui.view">
+        <field name="name">car.diagnosis.result.search</field>
+        <field name="model">car.diagnosis.result</field>
+        <field name="arch" type="xml">
+            <search string="Car Diagnostic Result">
+                <field name="diagnosis_id"/>
+                <field name="car_line_id"/>
+                <field name="product_id"/>
+                <filter name="filter_mine" string="Assigned to me"
+                        domain="[('technician_id', '=', uid)]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_diagnosis" string="Diagnosis"
+                            context="{'group_by': 'diagnosis_id'}"/>
+                    <filter name="group_car" string="Car" context="{'group_by': 'car_line_id'}"/>
+                </group>
+            </search>
         </field>
     </record>
 

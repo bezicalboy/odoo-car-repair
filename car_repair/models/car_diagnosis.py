@@ -85,20 +85,24 @@ class CarDiagnosis(models.Model):
         }
 
     def action_enter_results(self):
-        """Move to In Progress and show the diagnostic result lines."""
+        """Open the diagnostic result lines of this diagnosis.
+
+        The lines are edited on their own model, not through the one2many of
+        this form: a Technician is read only on car.diagnosis (FR-1) and would
+        not be able to save a line written through its parent.
+        """
         self.ensure_one()
         if not self.technician_id:
             raise UserError(_('Assign a technician before entering the results.'))
         if self.state == 'draft':
-            self.state = 'in_progress'
+            self.sudo().state = 'in_progress'
         return {
             'type': 'ir.actions.act_window',
             'name': _('Car Diagnostic Result'),
-            'res_model': 'car.diagnosis',
-            'res_id': self.id,
-            'view_mode': 'form',
-            'views': [(self.env.ref('car_repair.view_car_diagnosis_result_form').id, 'form')],
-            'target': 'new',
+            'res_model': 'car.diagnosis.result',
+            'view_mode': 'list,form',
+            'domain': [('diagnosis_id', '=', self.id)],
+            'context': {'default_diagnosis_id': self.id},
         }
 
     def action_complete(self):
@@ -178,9 +182,13 @@ class CarDiagnosisResult(models.Model):
 
     diagnosis_id = fields.Many2one(
         'car.diagnosis', required=True, ondelete='cascade', index=True)
+    repair_order_id = fields.Many2one(
+        related='diagnosis_id.repair_order_id', string='Repair Order', store=True)
+    technician_id = fields.Many2one(
+        related='diagnosis_id.technician_id', string='Technician', store=True, index=True)
     car_line_id = fields.Many2one(
         'car.repair.order.line', string='Car', required=True,
-        domain="[('id', 'in', parent.car_line_ids)]")
+        domain="[('repair_order_id', '=', repair_order_id)]")
     vehicle_id = fields.Many2one(
         related='car_line_id.vehicle_id', string='Vehicle', store=True)
     vin_sn = fields.Char(related='car_line_id.vin_sn', string='Serial Number')

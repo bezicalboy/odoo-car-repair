@@ -57,6 +57,24 @@
             <field name="groups" eval="[(4, ref('car_repair.group_head_technician'))]"/>
         </record>
 
+        <!-- FR-4: the assigned technician fills his own diagnostic results,
+             while the diagnosis header itself stays read only for him
+             (role table of the assessment). Same OR-combination reason as
+             above: the all-access rule for the roles higher up is required. -->
+        <record id="car_repair_diagnosis_result_rule_technician" model="ir.rule">
+            <field name="name">Diagnostic Result: own assigned diagnosis only (Technician)</field>
+            <field name="model_id" ref="model_car_diagnosis_result"/>
+            <field name="domain_force">[('technician_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('car_repair.group_technician'))]"/>
+        </record>
+
+        <record id="car_repair_diagnosis_result_rule_all" model="ir.rule">
+            <field name="name">Diagnostic Result: all (Head Technician and above)</field>
+            <field name="model_id" ref="model_car_diagnosis_result"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('car_repair.group_head_technician'))]"/>
+        </record>
+
         <!-- Multi-company isolation on the two main documents. -->
         <record id="car_repair_order_rule_company" model="ir.rule">
             <field name="name">Car Repair Order: multi-company</field>

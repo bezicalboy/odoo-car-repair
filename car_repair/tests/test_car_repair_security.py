@@ -19,13 +19,23 @@ class TestCarRepairSecurity(TransactionCase):
             cls.env, login='car_manager', groups='car_repair.group_service_manager')
 
         cls.partner = cls.env['res.partner'].create({'name': 'Security Client'})
+        cls.brand = cls.env['fleet.vehicle.model.brand'].create({'name': 'Sectest'})
+        cls.model = cls.env['fleet.vehicle.model'].create({
+            'name': 'S1', 'brand_id': cls.brand.id,
+        })
+        cls.vehicle = cls.env['fleet.vehicle'].create({
+            'model_id': cls.model.id, 'license_plate': '1-SEC-001',
+        })
         cls.repair_order = cls.env['car.repair.order'].create({
             'subject': 'Security test',
             'partner_id': cls.partner.id,
+            'car_line_ids': [(0, 0, {'vehicle_id': cls.vehicle.id})],
         })
+        cls.car_line = cls.repair_order.car_line_ids
         cls.diagnosis = cls.env['car.diagnosis'].create({
             'subject': 'Security test',
             'repair_order_id': cls.repair_order.id,
+            'car_line_ids': [(6, 0, cls.car_line.ids)],
         })
         cls.workorder_own = cls.env['car.repair.workorder'].create({
             'subject': 'Own work order',
@@ -58,6 +68,34 @@ class TestCarRepairSecurity(TransactionCase):
                 'subject': 'Nope',
                 'repair_order_id': self.repair_order.id,
             })
+
+    def test_assigned_technician_fills_own_diagnostic_result(self):
+        """FR-4: read only on the diagnosis, but owns his findings."""
+        self.diagnosis.technician_id = self.technician
+        part = self.env['product.product'].search([('sale_ok', '=', True)], limit=1)
+        result = self.env['car.diagnosis.result'].with_user(self.technician).create({
+            'diagnosis_id': self.diagnosis.id,
+            'car_line_id': self.car_line.id,
+            'product_id': part.id,
+            'quantity': 2.0,
+            'recommendation': 'Replace it',
+        })
+        result.with_user(self.technician).write({'quantity': 3.0})
+        self.assertEqual(result.quantity, 3.0)
+        self.assertEqual(result.technician_id, self.technician)
+
+    def test_technician_cannot_touch_result_of_colleague(self):
+        self.diagnosis.technician_id = self.technician2
+        part = self.env['product.product'].search([('sale_ok', '=', True)], limit=1)
+        other_result = self.env['car.diagnosis.result'].create({
+            'diagnosis_id': self.diagnosis.id,
+            'car_line_id': self.car_line.id,
+            'product_id': part.id,
+        })
+        visible = self.env['car.diagnosis.result'].with_user(self.technician).search([])
+        self.assertNotIn(other_result, visible)
+        with self.assertRaises(AccessError):
+            other_result.with_user(self.technician).write({'quantity': 9.0})
 
     def test_head_technician_sees_all_workorders(self):
         workorders = self.env['car.repair.workorder'].with_user(self.head_technician).search([])

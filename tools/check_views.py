@@ -5,6 +5,7 @@ MODELS = [
     ('car.repair.checklist', ['list', 'form']),
     ('car.repair.order', ['list', 'form', 'kanban', 'search']),
     ('car.diagnosis', ['list', 'form', 'search']),
+    ('car.diagnosis.result', ['list', 'form', 'search']),
     ('car.repair.workorder', ['list', 'form', 'kanban', 'search']),
     ('car.diagnosis.assign', ['form']),
     ('sale.order', ['form']),

@@ -13,7 +13,7 @@ access_car_diagnosis_technician,car.diagnosis.technician,model_car_diagnosis,car
 access_car_diagnosis_head_technician,car.diagnosis.head.technician,model_car_diagnosis,car_repair.group_head_technician,1,1,0,0
 access_car_diagnosis_manager,car.diagnosis.manager,model_car_diagnosis,car_repair.group_service_manager,1,1,1,0
 access_car_diagnosis_director,car.diagnosis.director,model_car_diagnosis,car_repair.group_director_commercial,1,1,1,1
-access_car_diagnosis_result_technician,car.diagnosis.result.technician,model_car_diagnosis_result,car_repair.group_technician,1,0,0,0
+access_car_diagnosis_result_technician,car.diagnosis.result.technician,model_car_diagnosis_result,car_repair.group_technician,1,1,1,0
 access_car_diagnosis_result_head_technician,car.diagnosis.result.head.technician,model_car_diagnosis_result,car_repair.group_head_technician,1,1,1,1
 access_car_repair_workorder_technician,car.repair.workorder.technician,model_car_repair_workorder,car_repair.group_technician,1,1,0,0
 access_car_repair_workorder_head_technician,car.repair.workorder.head.technician,model_car_repair_workorder,car_repair.group_head_technician,1,1,1,0
