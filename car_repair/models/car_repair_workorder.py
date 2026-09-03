@@ -1,5 +1,5 @@
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 
 class CarRepairWorkorder(models.Model):
@@ -64,11 +64,10 @@ class CarRepairWorkorder(models.Model):
                     'car.repair.workorder') or _('New')
         return super().create(vals_list)
 
-    # --- State machine -------------------------------------------------
-    # draft --start--> in_progress <--pause/resume--> paused
-    #                  in_progress --pending--> pending --resume--> in_progress
-    #                  in_progress --finish--> finished
-    #        any but finished --cancel--> cancel --draft--> draft
+    def _set_repair_order_state(self, state):
+        self.ensure_one()
+        if self.repair_order_id and self.repair_order_id.state != state:
+            self.repair_order_id.sudo().state = state
 
     def action_start(self):
         for workorder in self:
@@ -78,6 +77,7 @@ class CarRepairWorkorder(models.Model):
             if not workorder.date_start:
                 workorder.date_start = fields.Datetime.now()
             workorder._open_time_log()
+            workorder._set_repair_order_state('work_in_progress')
 
     def action_pause(self):
         for workorder in self:
@@ -108,8 +108,7 @@ class CarRepairWorkorder(models.Model):
             workorder.state = 'finished'
             workorder.date_end = fields.Datetime.now()
             workorder._update_sale_order_delivered_qty()
-            if workorder.repair_order_id:
-                workorder.repair_order_id.state = 'done'
+            workorder._set_repair_order_state('done')
 
     def action_cancel(self):
         for workorder in self:
@@ -120,8 +119,6 @@ class CarRepairWorkorder(models.Model):
 
     def action_draft(self):
         self.state = 'draft'
-
-    # --- Time logs -----------------------------------------------------
 
     def _open_time_log(self):
         """Start a new time log. Pause/resume cycles therefore add up."""
@@ -137,21 +134,30 @@ class CarRepairWorkorder(models.Model):
         open_logs = self.time_ids.filtered(lambda log: not log.date_end)
         open_logs.write({'date_end': fields.Datetime.now()})
 
-    # --- Sale integration ----------------------------------------------
+    def _labour_product(self):
+        return self.env.ref(
+            'car_repair.product_car_repair_labour').product_variant_id
 
     def _update_sale_order_delivered_qty(self):
-        """Report the hours spent on the service lines so they become invoiceable."""
+        """Report what the workshop handed over so the sales order is invoiceable."""
         self.ensure_one()
-        if not self.sale_order_id or not self.hours:
+        order = self.sale_order_id.sudo()
+        if not order:
             return
-        service_lines = self.sale_order_id.order_line.filtered(
-            lambda line: line.product_id.type == 'service' and not line.display_type)
-        if not service_lines:
-            return
-        # Everything spent goes on the first service line: a single work order
-        # bills one labour line. ponytail: no split per line, add a
-        # workorder-line/sale-line mapping if labour must be split per task.
-        service_lines[0].qty_delivered = self.hours
+        lines = order.order_line.filtered(lambda line: not line.display_type)
+        service_lines = lines.filtered(lambda line: line.product_id.type == 'service')
+        if self.hours and not service_lines:
+            service_lines = self.env['sale.order.line'].sudo().create({
+                'order_id': order.id,
+                'product_id': self._labour_product().id,
+                'product_uom_qty': self.hours,
+            })
+            lines |= service_lines
+        if self.hours and service_lines:
+            service_lines[0].qty_delivered = self.hours
+        for line in lines - service_lines[:1]:
+            if line.qty_delivered_method == 'manual':
+                line.qty_delivered = line.product_uom_qty
 
     def action_create_invoice(self):
         self.ensure_one()
@@ -159,7 +165,15 @@ class CarRepairWorkorder(models.Model):
             raise UserError(_('Finish the work order before invoicing it.'))
         if not self.sale_order_id:
             raise UserError(_('This work order is not linked to a sales order.'))
+        self._update_sale_order_delivered_qty()
+        if not self.sale_order_id.sudo().order_line.filtered('qty_to_invoice'):
+            raise UserError(_(
+                'Everything on sales order %s is already invoiced.',
+                self.sale_order_id.name))
         invoices = self.sale_order_id._create_invoices()
+        if not invoices:
+            raise AccessError(_(
+                'You are not allowed to create the invoice of this work order.'))
         return {
             'type': 'ir.actions.act_window',
             'name': _('Invoice'),

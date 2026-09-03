@@ -65,6 +65,13 @@ class CarDiagnosis(models.Model):
         for diagnosis in self:
             diagnosis.sale_order_count = counts.get(diagnosis.id, 0)
 
+    @api.onchange('repair_order_id')
+    def _onchange_repair_order_id(self):
+        for diagnosis in self:
+            diagnosis.car_line_ids = diagnosis.repair_order_id.car_line_ids
+            if diagnosis.repair_order_id and not diagnosis.subject:
+                diagnosis.subject = diagnosis.repair_order_id.subject
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -111,7 +118,6 @@ class CarDiagnosis(models.Model):
                 raise UserError(_(
                     'Fill the diagnostic result of %s before completing it.', diagnosis.name))
             diagnosis.state = 'complete'
-            diagnosis.car_line_ids.state = 'done'
 
     def action_cancel(self):
         self.state = 'cancel'

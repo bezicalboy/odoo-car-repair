@@ -37,12 +37,9 @@ class CarRepairOrder(models.Model):
     company_id = fields.Many2one(
         'res.company', required=True, default=lambda self: self.env.company)
 
-    # Client details
     partner_id = fields.Many2one(
         'res.partner', string='Client', required=True, tracking=True)
     contact_name = fields.Char()
-    # Kept read-only related: the workshop document must not silently rewrite
-    # the customer record. Workshop specific contact data goes in contact_number.
     phone = fields.Char(related='partner_id.phone', readonly=True)
     mobile = fields.Char(related='partner_id.mobile', readonly=True)
     email = fields.Char(related='partner_id.email', readonly=True)
@@ -116,7 +113,6 @@ class CarRepairOrder(models.Model):
             'subject': self.subject,
             'car_line_ids': [(6, 0, self.car_line_ids.ids)],
         })
-        self.car_line_ids.state = 'in_diagnosis'
         if self.state == 'received':
             self.state = 'in_diagnosis'
         return {
@@ -172,10 +168,25 @@ class CarRepairOrderLine(models.Model):
         selection=[('paid', 'Paid'), ('free', 'Free')], default='paid')
     nature_of_service = fields.Char()
     service_details = fields.Text()
+    diagnosis_ids = fields.Many2many(
+        'car.diagnosis', 'car_diagnosis_car_repair_order_line_rel',
+        'car_repair_order_line_id', 'car_diagnosis_id',
+        string='Diagnoses', readonly=True)
     state = fields.Selection(
         selection=[('draft', 'Draft'), ('in_diagnosis', 'In Diagnosis'), ('done', 'Done')],
-        default='draft', required=True)
+        compute='_compute_state', store=True, default='draft', required=True)
     partner_id = fields.Many2one(related='repair_order_id.partner_id', store=True)
+
+    @api.depends('diagnosis_ids.state')
+    def _compute_state(self):
+        for line in self:
+            states = set(line.diagnosis_ids.mapped('state'))
+            if 'complete' in states:
+                line.state = 'done'
+            elif states - {'cancel'}:
+                line.state = 'in_diagnosis'
+            else:
+                line.state = 'draft'
 
     def _display_name_car(self):
         self.ensure_one()

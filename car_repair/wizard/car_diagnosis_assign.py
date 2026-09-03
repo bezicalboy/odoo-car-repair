@@ -14,7 +14,7 @@ class CarDiagnosisAssign(models.TransientModel):
     def action_assign(self):
         self.ensure_one()
         self.diagnosis_id.technician_id = self.technician_id
-        self.diagnosis_id.message_post(
+        self.diagnosis_id._message_log(
             body=_('Diagnosis assigned to %s.', self.technician_id.display_name))
         self.diagnosis_id.workorder_ids.filtered(
             lambda w: w.state == 'draft').technician_id = self.technician_id
