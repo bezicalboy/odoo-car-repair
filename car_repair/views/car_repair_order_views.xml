@@ -32,6 +32,8 @@
                             groups="car_repair.group_service_manager"/>
                     <button name="%(action_report_car_receipt)d" type="action" string="Print Receipt"/>
                     <button name="%(action_report_car_label)d" type="action" string="Print Label"/>
+                    <button name="%(action_report_car_checklist)d" type="action" string="Print Checklist"
+                            invisible="not checklist_line_ids"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="received,in_diagnosis,quotation_sent,quotation_approved,work_in_progress,done"/>
                 </header>
@@ -79,7 +81,7 @@
                             <separator string="Car &amp; Service Details"/>
                             <field name="car_line_ids">
                                 <list string="Car Details" editable="bottom">
-                                    <field name="vehicle_id"/>
+                                    <field name="vehicle_id" options="{'no_create': True}"/>
                                     <field name="license_plate"/>
                                     <field name="model_id"/>
                                     <field name="vin_sn"/>
@@ -93,7 +95,7 @@
                                 <form string="Car Details">
                                     <group>
                                         <group>
-                                            <field name="vehicle_id"/>
+                                            <field name="vehicle_id" options="{'no_create': True}"/>
                                             <field name="license_plate"/>
                                             <field name="vin_sn"/>
                                         </group>
@@ -133,9 +135,6 @@
                                     <field name="create_uid" string="Created by" optional="show"/>
                                 </list>
                             </field>
-                            <button name="%(action_report_car_checklist)d" type="action"
-                                    string="Print Checklist" class="btn-secondary mt-2"
-                                    invisible="not checklist_line_ids"/>
                         </page>
                         <page string="Repair Note" name="note">
                             <field name="note" placeholder="Notes about the repair..."/>

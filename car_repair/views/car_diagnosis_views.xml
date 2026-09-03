@@ -45,6 +45,10 @@
                     <button name="action_draft" type="object" string="Set to Draft"
                             invisible="state != 'cancel'"
                             groups="car_repair.group_service_manager"/>
+                    <button name="%(action_report_car_diagnosis_request)d" type="action"
+                            string="Print Request"/>
+                    <button name="%(action_report_car_diagnosis_result)d" type="action"
+                            string="Print Result" invisible="not result_ids"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,in_progress,complete"/>
                 </header>
@@ -67,7 +71,8 @@
                     <group>
                         <group>
                             <field name="subject"/>
-                            <field name="repair_order_id" readonly="1"/>
+                            <field name="repair_order_id" readonly="id != False"
+                                   options="{'no_create': True}"/>
                             <field name="technician_id" widget="many2one_avatar_user"
                                    readonly="1" force_save="1"/>
                         </group>
@@ -89,8 +94,10 @@
                                 </group>
                             </group>
                             <separator string="Car Info"/>
-                            <field name="car_line_ids" widget="many2many">
-                                <list string="Car Details">
+                            <field name="car_line_ids" widget="many2many"
+                                   options="{'no_create': True}"
+                                   domain="[('repair_order_id', '=', repair_order_id)]">
+                                <list string="Car Details" create="0">
                                     <field name="vehicle_id"/>
                                     <field name="license_plate"/>
                                     <field name="model_id"/>
@@ -104,7 +111,9 @@
                         <page string="Diagnostic Result" name="result">
                             <field name="result_ids">
                                 <list string="Diagnostic Result" editable="bottom">
-                                    <field name="car_line_id"/>
+                                    <field name="car_line_id"
+                                           options="{'no_create': True}"
+                                           domain="[('id', 'in', parent.car_line_ids)]"/>
                                     <field name="vin_sn"/>
                                     <field name="product_id"/>
                                     <field name="code"/>
@@ -124,15 +133,14 @@
         </field>
     </record>
 
-    <!-- FR-4: the assigned technician edits his findings on the result model
-         itself, because he is read only on the diagnosis header. -->
     <record id="view_car_diagnosis_result_list" model="ir.ui.view">
         <field name="name">car.diagnosis.result.list</field>
         <field name="model">car.diagnosis.result</field>
         <field name="arch" type="xml">
             <list string="Car Diagnostic Result" editable="bottom" sample="1">
                 <field name="diagnosis_id" readonly="1" optional="show"/>
-                <field name="car_line_id"/>
+                <field name="car_line_id" options="{'no_create': True}"
+                       domain="[('repair_order_id', '=', repair_order_id)]"/>
                 <field name="vin_sn" optional="hide"/>
                 <field name="product_id"/>
                 <field name="code"/>
@@ -153,7 +161,8 @@
                     <group>
                         <group>
                             <field name="diagnosis_id" readonly="1"/>
-                            <field name="car_line_id"/>
+                            <field name="car_line_id" options="{'no_create': True}"
+                                   domain="[('repair_order_id', '=', repair_order_id)]"/>
                             <field name="vin_sn"/>
                             <field name="repair_order_id" invisible="1"/>
                         </group>
@@ -238,7 +247,10 @@
         <field name="context">{'search_default_filter_open': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">No diagnosis yet</p>
-            <p>A diagnosis is created from a car repair order.</p>
+            <p>
+                Open a Car Repair Order and press <b>Create Car Diagnosis</b>:
+                the diagnosis then carries its client and cars automatically.
+            </p>
         </field>
     </record>
 

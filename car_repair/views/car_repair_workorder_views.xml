@@ -28,9 +28,6 @@
         <field name="arch" type="xml">
             <form string="Car Work Order">
                 <header>
-                    <!-- Buttons follow the state machine:
-                         draft -> start; in_progress -> pause/pending/finish;
-                         paused/pending -> resume/finish; cancel from anywhere but finished. -->
                     <button name="action_start" type="object" string="Start"
                             class="btn-primary" invisible="state != 'draft'"/>
                     <button name="action_pause" type="object" string="Pause"
@@ -49,6 +46,8 @@
                     <button name="action_draft" type="object" string="Set to Draft"
                             invisible="state != 'cancel'"
                             groups="car_repair.group_head_technician"/>
+                    <button name="%(action_report_car_workorder)d" type="action"
+                            string="Print Work Order"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,in_progress,paused,pending,finished"/>
                 </header>
