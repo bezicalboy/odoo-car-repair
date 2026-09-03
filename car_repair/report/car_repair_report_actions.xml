@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- FR-7: printable documents of each step of the flow. -->
-
     <record id="action_report_car_label" model="ir.actions.report">
         <field name="name">Car Label</field>
         <field name="model">car.repair.order</field>

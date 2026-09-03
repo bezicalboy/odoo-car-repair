@@ -2,7 +2,6 @@
 <odoo>
     <data noupdate="1">
 
-        <!-- Checklist master data: usable right after installation. -->
         <record id="checklist_engine_oil" model="car.repair.checklist">
             <field name="name">Oil replacement</field>
             <field name="description">Drain and refill the engine oil, replace the oil filter</field>
@@ -33,8 +32,6 @@
             <field name="sequence">50</field>
         </record>
 
-        <!-- Labour product: invoiced on delivered quantity, which the work
-             order fills with the hours actually spent (FR-6). -->
         <record id="product_car_repair_labour" model="product.template">
             <field name="name">Car Repair Labour (Hour)</field>
             <field name="type">service</field>

@@ -20,8 +20,6 @@
               parent="menu_car_repair_operations"
               action="action_car_repair_workorder" sequence="30"/>
 
-    <!-- FR-4: entry point of the assigned technician, who is read only on the
-         diagnosis itself and edits his findings on the result model. -->
     <menuitem id="menu_car_diagnosis_result" name="Diagnostic Results"
               parent="menu_car_repair_operations"
               action="action_car_diagnosis_result" sequence="40"/>

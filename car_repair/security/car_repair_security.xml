@@ -2,9 +2,6 @@
 <odoo>
     <data noupdate="0">
 
-        <!-- FR-1: a Technician only sees and works on his own work orders.
-             Group rules are unified (OR), so the manager rule below is
-             mandatory: without it the restriction would also apply to them. -->
         <record id="car_repair_workorder_rule_technician" model="ir.rule">
             <field name="name">Car Work Order: own work orders only (Technician)</field>
             <field name="model_id" ref="model_car_repair_workorder"/>
@@ -27,8 +24,6 @@
             <field name="perm_unlink" eval="True"/>
         </record>
 
-        <!-- Same split on the work order children, otherwise a technician
-             could read the time logs and lines of his colleagues. -->
         <record id="car_repair_workorder_line_rule_technician" model="ir.rule">
             <field name="name">Car Work Order Line: own work orders only (Technician)</field>
             <field name="model_id" ref="model_car_repair_workorder_line"/>
@@ -57,10 +52,6 @@
             <field name="groups" eval="[(4, ref('car_repair.group_head_technician'))]"/>
         </record>
 
-        <!-- FR-4: the assigned technician fills his own diagnostic results,
-             while the diagnosis header itself stays read only for him
-             (role table of the assessment). Same OR-combination reason as
-             above: the all-access rule for the roles higher up is required. -->
         <record id="car_repair_diagnosis_result_rule_technician" model="ir.rule">
             <field name="name">Diagnostic Result: own assigned diagnosis only (Technician)</field>
             <field name="model_id" ref="model_car_diagnosis_result"/>
@@ -75,7 +66,6 @@
             <field name="groups" eval="[(4, ref('car_repair.group_head_technician'))]"/>
         </record>
 
-        <!-- Multi-company isolation on the two main documents. -->
         <record id="car_repair_order_rule_company" model="ir.rule">
             <field name="name">Car Repair Order: multi-company</field>
             <field name="model_id" ref="model_car_repair_order"/>

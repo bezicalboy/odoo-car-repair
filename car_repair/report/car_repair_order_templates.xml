@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Shared blocks so the four workshop reports stay consistent. -->
     <template id="car_repair_address_block">
         <div class="row mb-3">
             <div class="col-5">
@@ -45,7 +44,6 @@
         </table>
     </template>
 
-    <!-- Car Label Report -->
     <template id="report_car_label_document">
         <t t-call="web.basic_layout">
             <div class="page">
@@ -85,7 +83,6 @@
         </t>
     </template>
 
-    <!-- Car Receipt Report -->
     <template id="report_car_receipt_document">
         <t t-call="web.external_layout">
             <div class="page">
@@ -121,7 +118,6 @@
         </t>
     </template>
 
-    <!-- Car Checklist Report -->
     <template id="report_car_checklist_document">
         <t t-call="web.external_layout">
             <div class="page">

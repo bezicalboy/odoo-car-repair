@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Demo data: one full flow ready to click through after installation.
-         Own vehicle models so the demo does not depend on the fleet demo data. -->
     <record id="demo_model_a1" model="fleet.vehicle.model">
         <field name="name">A1</field>
         <field name="brand_id" ref="fleet.brand_audi"/>

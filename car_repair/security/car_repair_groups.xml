@@ -7,8 +7,6 @@
         <field name="sequence">20</field>
     </record>
 
-    <!-- Roles are cumulative: each one implies the previous, so access rights
-         and record rules only have to declare the extra permissions. -->
     <record id="group_technician" model="res.groups">
         <field name="name">Technician</field>
         <field name="category_id" ref="module_category_car_repair"/>
@@ -37,7 +35,6 @@
         <field name="comment">Administrator of the application: full access on every record and on the configuration.</field>
     </record>
 
-    <!-- The admin user gets the top role so a fresh database is usable. -->
     <record id="base.user_admin" model="res.users">
         <field name="groups_id" eval="[(4, ref('group_director_commercial'))]"/>
     </record>

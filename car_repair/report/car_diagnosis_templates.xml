@@ -46,7 +46,6 @@
         </table>
     </template>
 
-    <!-- Car Diagnosis Request Report: what the workshop asks the technician to check -->
     <template id="report_car_diagnosis_request_document">
         <t t-call="web.external_layout">
             <div class="page">
@@ -73,7 +72,6 @@
         </t>
     </template>
 
-    <!-- Car Diagnosis Result Report: what the technician found -->
     <template id="report_car_diagnosis_result_document">
         <t t-call="web.external_layout">
             <div class="page">

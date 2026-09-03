@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Car Invoice Report: the native invoice with the car columns added,
-         so the workshop invoice states which car was serviced. -->
     <template id="report_invoice_document_car_repair" inherit_id="account.report_invoice_document">
         <xpath expr="//th[@name='th_description']" position="before">
             <th name="th_car_model" class="text-start"><span>Model #</span></th>

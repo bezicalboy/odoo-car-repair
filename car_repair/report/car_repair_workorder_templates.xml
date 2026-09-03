@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Car Work Orders Report: the work performed on the cars -->
     <template id="report_car_workorder_document">
         <t t-call="web.external_layout">
             <div class="page">
