@@ -47,8 +47,13 @@ Requires a running Odoo 18.0 Community and PostgreSQL.
    or from the interface: enable developer mode, then Apps, Update Apps List,
    search "Car Repair", Activate.
 
-4. Give each internal user one role under Settings, Users, the "Car Repair"
-   section. The database administrator receives Director Commercial on install.
+   To pick up a later version of the addon, use `-u car_repair` instead of
+   `-i car_repair`: `-i` does nothing once the module is installed.
+
+4. Give each internal user their roles under Settings, Users, Access Rights, in
+   the "Car Repair" section. The roles are checkboxes, so one user can hold
+   several positions. Ticking a higher role also grants the lower ones. The
+   database administrator receives Director Commercial on install.
 
 Dependencies, all standard Odoo modules: `mail`, `fleet`, `sale_management`,
 `account`. They are installed automatically as dependencies. PDF reports need
@@ -72,6 +77,13 @@ processes updating the module registry at once can corrupt the install. Let the
 command finish and return the prompt before starting the service again —
 closing the window mid-install leaves modules stuck in state `to install`.
 
+The PowerShell window must be elevated ("Administrator:" in its title bar).
+The installer keeps `data_dir` under `C:\Program Files`, where a normal user
+has read-only rights, so a non-elevated run stops with
+`PermissionError: [Errno 13] Permission denied` on `sessions\filestore\...`
+while writing the menu icon. The database is left untouched in that case, but
+the service stays stopped.
+
 If a module is stuck in `to install`, Apps shows "Cancel Install" instead of
 "Activate". A plain service restart does not clear it, because the queue is
 only processed by a loader running in update mode. Re-run the `-i` command
@@ -92,6 +104,15 @@ Cumulative roles: every role includes the rights of the one above it.
 | Diagnostic Result     | **own** r/w/create| full            | full            | full                |
 | Work Order            | read/write **own**| full            | full            | full                |
 
+The roles are assigned as checkboxes on the user form (Settings, Users, Access
+Rights, section "Car Repair"), so a single user can hold several positions at
+once. Odoo renders a group category either as a single-choice selection field —
+which it does here, because the roles imply each other — or as checkboxes hidden
+behind developer mode. Neither is usable for a workshop administrator, so the
+field `car_repair_role_ids` exposes the same four groups as a plain checkbox
+list. It reads and writes `groups_id`, therefore implied groups still apply:
+ticking Service Manager also grants Head Technician and Technician.
+
 Access is enforced by `security/ir.model.access.csv` (what a role may do) and
 `security/car_repair_security.xml` (which records it may touch) — not by Python
 checks in the business methods. The technician restriction is a record rule on
@@ -102,6 +123,20 @@ Record rules of different groups are combined with OR. The rule that grants the
 Head Technician access to every work order is therefore required: without it,
 the "own work orders only" domain of the Technician group would also apply to
 the roles above, since the roles are cumulative.
+
+The `groups=` attributes on buttons and menus only hide user interface elements;
+they are a convenience, not the enforcement. Every restriction that matters is
+verified again by the access rights and record rules when the ORM is called.
+
+Because the roles are genuinely restrictive, the documents move their own status
+instead of expecting the acting user to have write access on a parent document:
+
+- `car.repair.order.line.state` is computed from the state of its diagnoses, so
+  a Head Technician completing a diagnosis does not need write access on the
+  repair order lines.
+- `car.repair.order.state` is moved by the work order through one narrow
+  `sudo()` call, so a Technician finishing his own work order does not need
+  write access on the repair order itself.
 
 FR-4 asks for a Technician who is read only on the Diagnosis but who still fills
 his own Diagnostic Result. Those are two models, so the rights differ: read only
@@ -119,19 +154,29 @@ Car Repair, Configuration, Cars.
 
 ## Reports (FR-7)
 
-Print menu of the Car Repair Order: Car Label, Car Receipt, Car Checklist.
-Print menu of the Car Diagnosis: Car Diagnostic Request, Car Diagnostic Result.
-Print menu of the Work Order: Car Work Order.
+Every report has a button in the header of the form it belongs to, so printing is
+one click and does not require opening the cog Print dropdown. The reports are
+also bound to that dropdown, so both paths work.
+
+| Form             | Header buttons                                  |
+|------------------|-------------------------------------------------|
+| Car Repair Order | Print Receipt, Print Label, Print Checklist     |
+| Car Diagnosis    | Print Request, Print Result                     |
+| Work Order       | Print Work Order                                |
+
+Print Checklist and Print Result appear once the document has lines to print.
 The native invoice report shows the car and license plate of each line.
 
 ## Tests
 
     odoo-bin -c odoo.conf -d <database> -u car_repair --test-enable --test-tags=/car_repair --stop-after-init
 
-16 tests: the full flow (`tests/test_car_repair_flow.py`) and the role
+20 tests: the full flow (`tests/test_car_repair_flow.py`) and the role
 enforcement (`tests/test_car_repair_security.py`), including the pause/resume
-accumulation of hours, the invoice quantity following those hours, and the
-technician who can fill his own diagnostic result but not a colleague's.
+accumulation of hours, the invoice quantity following those hours, the technician
+who can fill his own diagnostic result but not a colleague's, the role checkboxes
+on the user form, a user holding several roles at once, and the print buttons
+being present in the form headers.
 
 Two extra checks render every report and load every view and menu, which the
 unit tests do not cover:
@@ -159,8 +204,15 @@ example repair orders, cars and checklist items.
   holds one row per interval and `hours` is their sum.
 - **Labour is invoiced from the hours.** The product `Car Repair Labour (Hour)`
   is a service with invoicing policy "Delivered quantities". Finishing the work
-  order writes the hours on the first service line of the sales order, which
-  makes it invoiceable. A work order therefore bills one labour line.
+  order writes the hours on the service line of the sales order, and adds that
+  line when the quotation has none, so a parts-only quotation stays invoiceable.
+  A work order therefore bills one labour line.
+- **Finishing a work order means the parts were fitted.** Without the `stock`
+  module nothing ever marks a spare part as delivered, so a quotation of parts
+  with the "Delivered quantities" policy would have nothing to invoice.
+  `Finish` therefore reports the ordered quantity as delivered on every line
+  whose delivery is tracked manually. With `stock` installed, the delivery
+  orders take that over and this code leaves those lines alone.
 - **Native sales and accounting.** Quotations are `sale.order`, invoices are
   `account.move`. No copy of either model; only the car reference columns were
   added.
@@ -174,10 +226,35 @@ example repair orders, cars and checklist items.
 ## Not implemented
 
 - Splitting labour hours across several sales order lines. One work order
-  reports its hours on one service line; marked in the code where the split
-  would go.
+  reports its hours on one service line.
 - Spare part stock moves. Parts appear on the quotation and the invoice, but no
   `stock` reservation or delivery is created (the module does not depend on
   `stock`).
 - Portal or website access for the client. The flow is back office only.
+- Email. The module sends none: the only mail call is an internal chatter note
+  logged by the assignment wizard. The `mail` dependency is there for
+  `mail.thread` and `mail.activity.mixin`, which the assessment requires for the
+  activity log, not for notifications.
 - Custom CSS or a custom kanban design: out of scope for this assessment.
+
+## Known upstream issue: Send & Print on an invoice
+
+On this Odoo 18.0 Community build, the invoice **Send & Print** button fails
+with:
+
+    AttributeError: 'account.move.line' object has no attribute 'deferred_start_date'
+
+This is a bug in the standard `account_edi_ubl_cii` module, not in this addon.
+`account_edi_ubl_cii/models/account_edi_cii.py` reads
+`account.move.line.deferred_start_date` while building the Factur-X XML that
+Odoo always embeds in the invoice PDF, and that field is declared by
+`account_accountant`, which is an Enterprise module. The same traceback appears
+on a plain invoice created without this addon, and `account_edi_ubl_cii` arrives
+through `auto_install` via `sale_edi_ubl`, so it is present in every database
+where Sales is installed.
+
+Use the **Print** button, which renders the invoice PDF normally, including the
+car and license plate columns this addon adds. Uninstalling the EDI modules is
+not a fix: `auto_install` reinstates them on the next module update. The
+Indonesian e-invoicing modules (`l10n_id_efaktur`, `l10n_id_efaktur_coretax`)
+depend on `l10n_id` only and are unaffected.
