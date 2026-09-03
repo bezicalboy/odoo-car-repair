@@ -67,7 +67,6 @@ class TestCarRepairFlow(TransactionCase):
         diagnosis = order.diagnosis_ids
         diagnosis.technician_id = self.env.user
         with self.assertRaises(UserError):
-            # No diagnostic result yet.
             diagnosis.action_create_quotation()
         diagnosis.write({
             'state': 'in_progress',
@@ -86,6 +85,7 @@ class TestCarRepairFlow(TransactionCase):
         self.assertEqual(sale_order.order_line.car_line_id, order.car_line_ids)
         self.assertEqual(order.state, 'quotation_sent')
         self.assertEqual(diagnosis.state, 'complete')
+        self.assertEqual(order.car_line_ids.state, 'done')
 
     def _confirmed_workorder(self):
         order = self._new_repair_order()
@@ -122,7 +122,6 @@ class TestCarRepairFlow(TransactionCase):
         self.assertEqual(workorder.state, 'in_progress')
         self.assertEqual(len(workorder.time_ids), 1)
 
-        # Pause then resume must accumulate, not overwrite.
         log = workorder.time_ids
         log.date_start = fields.Datetime.subtract(fields.Datetime.now(), hours=2)
         workorder.action_pause()
@@ -144,18 +143,65 @@ class TestCarRepairFlow(TransactionCase):
         self.assertTrue(workorder.date_end)
         self.assertFalse(workorder.time_ids.filtered(lambda t: not t.date_end))
         with self.assertRaises(UserError):
-            workorder.action_cancel()  # A finished work order cannot be cancelled.
+            workorder.action_cancel()
         self.assertEqual(order.state, 'done')
 
-        # The hours spent are reported on the service line so it becomes invoiceable.
         service_line = sale_order.order_line.filtered(
             lambda line: line.product_id.type == 'service')
         self.assertAlmostEqual(service_line.qty_delivered, workorder.hours, places=1)
 
+    def test_08_invoice_parts_without_labour_line(self):
+        """A quotation of spare parts only must still be invoiceable."""
+        order = self._new_repair_order()
+        order.action_create_diagnosis()
+        diagnosis = order.diagnosis_ids
+        part = self.env['product.product'].create({
+            'name': 'Test Brake Pads', 'type': 'consu',
+            'invoice_policy': 'delivery', 'list_price': 100.0,
+        })
+        diagnosis.write({
+            'state': 'in_progress',
+            'technician_id': self.env.user.id,
+            'result_ids': [(0, 0, {
+                'car_line_id': order.car_line_ids.id,
+                'product_id': part.id,
+                'quantity': 4.0,
+            })],
+        })
+        diagnosis.action_create_quotation()
+        sale_order = diagnosis.sale_order_ids
+        self.assertFalse(
+            sale_order.order_line.filtered(lambda l: l.product_id.type == 'service'),
+            'This quotation has no labour line, which is the case that failed.')
+        sale_order.action_confirm()
+        workorder = sale_order.car_workorder_ids
+        workorder.action_start()
+        workorder.time_ids.date_start = fields.Datetime.subtract(
+            fields.Datetime.now(), hours=3)
+        workorder.action_finish()
+
+        part_line = sale_order.order_line.filtered(lambda l: l.product_id == part)
+        self.assertEqual(part_line.qty_delivered, 4.0)
+        labour_line = sale_order.order_line.filtered(
+            lambda l: l.product_id.type == 'service')
+        self.assertTrue(labour_line, 'The hours spent are added as a labour line.')
+        self.assertAlmostEqual(labour_line.qty_delivered, workorder.hours, places=1)
+
+        action = workorder.action_create_invoice()
+        invoice = self.env['account.move'].browse(action['res_id'])
+        self.assertEqual(invoice.move_type, 'out_invoice')
+        self.assertEqual(len(invoice.invoice_line_ids), 2)
+        self.assertAlmostEqual(
+            invoice.invoice_line_ids.filtered(
+                lambda l: l.product_id == part).quantity, 4.0, places=1)
+
+        with self.assertRaises(UserError):
+            workorder.action_create_invoice()
+
     def test_07_invoice_from_finished_workorder(self):
         order, sale_order, workorder = self._confirmed_workorder()
         with self.assertRaises(UserError):
-            workorder.action_create_invoice()  # Not finished yet.
+            workorder.action_create_invoice()
         workorder.action_start()
         workorder.time_ids.date_start = fields.Datetime.subtract(
             fields.Datetime.now(), hours=4)

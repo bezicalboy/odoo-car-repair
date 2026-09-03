@@ -1,3 +1,5 @@
+from lxml import etree
+
 from odoo.exceptions import AccessError
 from odoo.tests import TransactionCase, new_test_user, tagged
 
@@ -116,3 +118,65 @@ class TestCarRepairSecurity(TransactionCase):
             'partner_id': self.partner.id,
         })
         self.assertTrue(order.name.startswith('SR'))
+
+    def test_roles_are_checkboxes_on_the_user_form(self):
+        """FR-1: one user may hold several roles, ticked on the user form."""
+        roles = self.technician._car_repair_roles()
+        self.assertEqual(len(roles), 4)
+        self.assertEqual(self.technician.car_repair_role_ids, self.env.ref(
+            'car_repair.group_technician'))
+
+        field = self.env['res.users']._fields['car_repair_role_ids']
+        self.assertEqual(field.type, 'many2many')
+
+        arch = self.env['res.users'].get_view(
+            self.env.ref('base.view_users_form').id, 'form')['arch']
+        self.assertIn('car_repair_role_ids', arch)
+        self.assertIn('many2many_checkboxes', arch)
+
+    def test_one_user_can_hold_several_roles(self):
+        user = new_test_user(self.env, login='car_multi', groups='base.group_user')
+        user.write({'car_repair_role_ids': [(6, 0, [
+            self.env.ref('car_repair.group_technician').id,
+            self.env.ref('car_repair.group_service_manager').id,
+        ])]})
+        self.assertTrue(user.has_group('car_repair.group_technician'))
+        self.assertTrue(user.has_group('car_repair.group_head_technician'))
+        self.assertTrue(user.has_group('car_repair.group_service_manager'))
+        self.assertFalse(user.has_group('car_repair.group_director_commercial'))
+
+        user.write({'car_repair_role_ids': [(6, 0, [
+            self.env.ref('car_repair.group_technician').id])]})
+        self.assertTrue(user.has_group('car_repair.group_technician'))
+        self.assertFalse(user.has_group('car_repair.group_service_manager'))
+
+    def test_technician_can_print_his_work_order(self):
+        """FR-7: the reports are reachable by the role that needs them."""
+        content, ext = self.env['ir.actions.report'].with_user(
+            self.technician)._render_qweb_pdf(
+            'car_repair.report_car_workorder', res_ids=self.workorder_own.ids)
+        self.assertIn(ext, ('pdf', 'html'))
+        self.assertTrue(content)
+        self.assertIn(
+            self.workorder_own.name,
+            content.decode() if ext == 'html' else self.workorder_own.name)
+
+    def test_print_buttons_are_in_the_form_header(self):
+        """FR-7: printing is one click in the header, not only in the cog menu."""
+        expected = {
+            'car.repair.order': ('car_repair.view_car_repair_order_form', 3),
+            'car.diagnosis': ('car_repair.view_car_diagnosis_form', 2),
+            'car.repair.workorder': ('car_repair.view_car_repair_workorder_form', 1),
+        }
+        for model, (view_xmlid, count) in expected.items():
+            arch = etree.fromstring(self.env[model].get_view(
+                self.env.ref(view_xmlid).id, 'form')['arch'])
+            buttons = arch.xpath('//header/button[@type="action"]')
+            self.assertEqual(
+                len(buttons), count,
+                'Model %s must expose %d print buttons in its header.' % (model, count))
+
+        reports = self.env['ir.actions.report'].search([
+            ('report_name', 'like', 'car_repair.%')])
+        self.assertTrue(all(r.binding_model_id for r in reports),
+                        'The reports stay bound to the cog Print menu as well.')
