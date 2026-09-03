@@ -24,7 +24,11 @@ Built for Odoo 18.0 Community. Module technical name: `car_repair`.
 
 ## Install
 
-Requires a running Odoo 18.0 Community and PostgreSQL.
+Requires a running Odoo 18.0 Community and PostgreSQL. Windows users can skip to
+[Install on Windows](#install-on-windows), which repeats these steps with the
+paths and commands of the official installer.
+
+### Linux, macOS, Docker
 
 1. Clone the repository somewhere outside the Odoo installation directory:
 
@@ -60,37 +64,106 @@ Dependencies, all standard Odoo modules: `mail`, `fleet`, `sale_management`,
 `wkhtmltopdf`, which the official Odoo Windows installer already bundles. No
 Python packages beyond Odoo's own are required.
 
-### Windows
+## Install on Windows
 
-The installer keeps the configuration at
-`C:\Program Files\Odoo 18.0.<build>\server\odoo.conf` and runs Odoo as the
-service `odoo-server-18.0`. Editing that file and starting the service both
-need an elevated (Administrator) shell:
+Tested on the official `odoo_18.0.<build>.exe` installer, which puts Odoo in
+`C:\Program Files\Odoo 18.0.<build>`, bundles its own Python and PostgreSQL, and
+runs the server as the Windows service `odoo-server-18.0`.
+
+Substitute your real build number for `<build>` and your database name for
+`<database>` throughout.
+
+### Step 1 — clone the repository outside the Odoo folder
+
+Anything under `C:\Program Files` needs administrator rights to write, so keep
+the clone somewhere else. A short path without spaces is easiest:
+
+    git clone https://github.com/bezicalboy/odoo-car-repair C:\odoo-addons
+
+That directory now holds `C:\odoo-addons\car_repair\__manifest__.py`.
+
+### Step 2 — add the clone to addons_path
+
+Open `C:\Program Files\Odoo 18.0.<build>\server\odoo.conf` in a text editor
+started as administrator (Notepad, right-click, Run as administrator), and append
+the clone directory to the existing `addons_path`, comma separated:
+
+    addons_path = C:\Program Files\Odoo 18.0.<build>\server\odoo\addons,C:\odoo-addons
+
+Point `addons_path` at the directory that *contains* `car_repair`, so
+`C:\odoo-addons` — not `C:\odoo-addons\car_repair`. Odoo scans only the direct
+children of each entry for a `__manifest__.py`.
+
+Keep a copy of the file first; the installer does not back it up.
+
+### Step 3 — install the module from an elevated PowerShell
+
+Open the Start menu, type `PowerShell`, right-click *Windows PowerShell* and
+choose **Run as administrator**. The window title must read
+"Administrator: Windows PowerShell". Then, in order:
 
     Stop-Service odoo-server-18.0
     cd "C:\Program Files\Odoo 18.0.<build>"
     .\python\python.exe server\odoo-bin -c "server\odoo.conf" -d <database> -i car_repair --stop-after-init
     Start-Service odoo-server-18.0
 
-Stop the service first: the running server holds the database, and two
-processes updating the module registry at once can corrupt the install. Let the
-command finish and return the prompt before starting the service again —
+Stop the service first: the running server holds the database, and two processes
+updating the module registry at once can corrupt the install. Wait for the third
+command to finish and return the prompt before starting the service again —
 closing the window mid-install leaves modules stuck in state `to install`.
 
-The PowerShell window must be elevated ("Administrator:" in its title bar).
-The installer keeps `data_dir` under `C:\Program Files`, where a normal user
-has read-only rights, so a non-elevated run stops with
-`PermissionError: [Errno 13] Permission denied` on `sessions\filestore\...`
-while writing the menu icon. The database is left untouched in that case, but
-the service stays stopped.
+Installing `car_repair` also installs `sale_management`, `account`, `fleet` and
+their own dependencies, so the first run processes dozens of modules and takes
+several minutes. Lines such as
+`Unmet dependencies: hr / mass_mailing / survey` are harmless: those modules are
+unrelated and stay uninstalled.
 
-If a module is stuck in `to install`, Apps shows "Cancel Install" instead of
-"Activate". A plain service restart does not clear it, because the queue is
-only processed by a loader running in update mode. Re-run the `-i` command
-above (do not click Cancel Install, which discards the queue).
+### Step 4 — assign the roles
 
-Installing `car_repair` also installs its dependencies, so the first run
-processes more modules than just this one and takes several minutes.
+Open <http://localhost:8069>, then Settings, Users and Companies, Users. Open a
+user, go to the Access Rights tab and tick the roles in the **Car Repair**
+section. They are checkboxes, so one user can hold several positions, and ticking
+a higher role also grants the lower ones. The database administrator receives
+Director Commercial during installation.
+
+### Updating to a later version of the addon
+
+Pull the new code, then run the same sequence with `-u` instead of `-i`. On an
+installed module `-i` does nothing:
+
+    git -C C:\odoo-addons pull
+    Stop-Service odoo-server-18.0
+    cd "C:\Program Files\Odoo 18.0.<build>"
+    .\python\python.exe server\odoo-bin -c "server\odoo.conf" -d <database> -u car_repair --stop-after-init
+    Start-Service odoo-server-18.0
+
+### Windows troubleshooting
+
+**`PermissionError: [Errno 13] Permission denied` on `sessions\filestore\...`**
+The PowerShell window is not elevated. The installer keeps `data_dir` under
+`C:\Program Files`, where a normal user has read-only rights, so writing the menu
+icon fails. The database is left untouched, but the service stays stopped: rerun
+the command from an elevated window, then start the service.
+
+**The module does not appear in Apps.**
+`addons_path` points one level too deep or too shallow. It must name the
+directory that contains `car_repair`. After fixing it, restart the service and
+use Apps, Update Apps List (developer mode must be on).
+
+**Apps shows "Cancel Install" instead of "Activate".**
+The module is queued in state `to install` from an interrupted run. A plain
+service restart does not clear it, because the queue is only processed by a
+loader running in update mode. Rerun the step 3 command — do not click Cancel
+Install, which discards the queue.
+
+**`ERROR: couldn't create the logfile directory.`**
+Harmless. Odoo falls back to logging on standard output, which is what you are
+reading in the window.
+
+**`odoo-bin` is not recognised.**
+Run it through the bundled interpreter as shown above
+(`.\python\python.exe server\odoo-bin`); the installer does not put Odoo on
+`PATH`.
 
 ## Roles (FR-1)
 
