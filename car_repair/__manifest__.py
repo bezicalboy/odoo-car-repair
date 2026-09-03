@@ -24,6 +24,7 @@
         'views/car_diagnosis_views.xml',
         'views/car_repair_workorder_views.xml',
         'views/sale_order_views.xml',
+        'views/res_users_views.xml',
         'report/car_repair_order_templates.xml',
         'report/car_diagnosis_templates.xml',
         'report/car_repair_workorder_templates.xml',
