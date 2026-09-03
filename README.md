@@ -26,24 +26,59 @@ Built for Odoo 18.0 Community. Module technical name: `car_repair`.
 
 Requires a running Odoo 18.0 Community and PostgreSQL.
 
-1. Put the `car_repair` folder in your addons path, for example:
+1. Clone the repository somewhere outside the Odoo installation directory:
 
-       git clone <this-repo> /opt/odoo/custom-addons/odoo-car-repair
+       git clone https://github.com/bezicalboy/odoo-car-repair /opt/odoo/custom-addons/odoo-car-repair
 
-   and add `/opt/odoo/custom-addons/odoo-car-repair` to `addons_path` in your
-   Odoo configuration file.
+2. Add the clone directory to `addons_path` in your Odoo configuration file,
+   comma separated:
 
-2. Restart Odoo, then install from the command line:
+       addons_path = /opt/odoo/addons,/opt/odoo/custom-addons/odoo-car-repair
+
+   Point `addons_path` at the directory that *contains* `car_repair`, which is
+   the repository root — not at `car_repair` itself. Odoo only scans the direct
+   children of each `addons_path` entry for a `__manifest__.py`, so a path one
+   level too deep or one level too shallow makes the module invisible in Apps.
+
+3. Restart Odoo, then install from the command line:
 
        odoo-bin -c odoo.conf -d <database> -i car_repair --stop-after-init
 
-   or from the interface: Apps, Update Apps List, search "Car Repair", Install.
+   or from the interface: enable developer mode, then Apps, Update Apps List,
+   search "Car Repair", Activate.
 
-3. Give each internal user one role under Settings, Users, the "Car Repair"
+4. Give each internal user one role under Settings, Users, the "Car Repair"
    section. The database administrator receives Director Commercial on install.
 
 Dependencies, all standard Odoo modules: `mail`, `fleet`, `sale_management`,
-`account`.
+`account`. They are installed automatically as dependencies. PDF reports need
+`wkhtmltopdf`, which the official Odoo Windows installer already bundles. No
+Python packages beyond Odoo's own are required.
+
+### Windows
+
+The installer keeps the configuration at
+`C:\Program Files\Odoo 18.0.<build>\server\odoo.conf` and runs Odoo as the
+service `odoo-server-18.0`. Editing that file and starting the service both
+need an elevated (Administrator) shell:
+
+    Stop-Service odoo-server-18.0
+    cd "C:\Program Files\Odoo 18.0.<build>"
+    .\python\python.exe server\odoo-bin -c "server\odoo.conf" -d <database> -i car_repair --stop-after-init
+    Start-Service odoo-server-18.0
+
+Stop the service first: the running server holds the database, and two
+processes updating the module registry at once can corrupt the install. Let the
+command finish and return the prompt before starting the service again —
+closing the window mid-install leaves modules stuck in state `to install`.
+
+If a module is stuck in `to install`, Apps shows "Cancel Install" instead of
+"Activate". A plain service restart does not clear it, because the queue is
+only processed by a loader running in update mode. Re-run the `-i` command
+above (do not click Cancel Install, which discards the queue).
+
+Installing `car_repair` also installs its dependencies, so the first run
+processes more modules than just this one and takes several minutes.
 
 ## Roles (FR-1)
 
